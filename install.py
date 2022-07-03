@@ -26,6 +26,7 @@ def install_programs():
 
   parser.add_argument('--php', help='Installs PHP', action='store_true')
   parser.add_argument('--mysql', help='Installs MySql', action='store_true')
+  parser.add_argument('--db-path', help='Restores database from specified path')
   parser.add_argument('--node', help='Installs NodeJs', default=14, type=int)
   parser.add_argument('--all', help='Installs all programs', action='store_true')
 
@@ -40,6 +41,8 @@ def install_programs():
     install_php()
   elif args.node:
     install_node(args.node)
+  elif args.db_path:
+    restore_database(args.db_path)
   else:
     print('Invalid argument(s) passed to this command')
 
@@ -95,6 +98,10 @@ def install_node(version):
   os.system("apt install nodejs")
   os.system("npm i -g npm")
   os.system("npm i -g yarn")
+
+def restore_database(path):
+  print_blue(f'About to restore database from {path}')
+  os.system(f'mysql < {path}')
 
 try:
   run()
