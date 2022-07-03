@@ -9,28 +9,63 @@ def run():
     install_programs()
 
 def print_blue(text):
-  red = '\n\033[94m'
-  print(f"{red}{text}")
-  time.sleep(2)
+  blue = '\033[94m'
+  print(f"\n{blue}[/] {text}\x1b[0m")
+  time.sleep(1.25)
 
 def update_programs():
   print_blue('Updating installed applications...')
   os.system('apt update && apt upgrade -y')
 
-def install_programs():
-  update_programs()
-
+def create_commands_and_arguments():
   parser = argparse.ArgumentParser(
     description='Installs PHP, Composer, MySQL and NodeJS on WSL (Ubuntu)'
   )
 
-  parser.add_argument('--php', help='Installs PHP', action='store_true')
-  parser.add_argument('--mysql', help='Installs MySql', action='store_true')
-  parser.add_argument('--db-path', help='Restores database from specified path')
-  parser.add_argument('--node', help='Installs NodeJs', default=14, type=int)
-  parser.add_argument('--all', help='Installs all programs', action='store_true')
+  subparser = parser.add_subparsers(title='main commands')
 
-  args = parser.parse_args()
+  install_subparser = subparser.add_parser(
+    'install',
+    help='Installs programs'
+  )
+  install_subparser.add_argument(
+    '--php', 
+    help='Installs PHP', 
+    action='store_true'
+  )
+  install_subparser.add_argument(
+    '--mysql', 
+    help='Installs MySql', 
+    action='store_true'
+  )
+  install_subparser.add_argument(
+    '--node', 
+    help='Installs NodeJs', 
+    default=14, 
+    type=int
+  )
+  install_subparser.add_argument(
+    '--all', 
+    help='Installs all programs', 
+    action='store_true'
+  )
+
+  restore_db_subparser = subparser.add_parser(
+    'restore-db', 
+    help='Restores MySQL database from file'
+  )
+  restore_db_subparser.add_argument(
+    'path', 
+    help='Path to database', 
+    type=str
+  )
+
+  return parser.parse_args()
+
+def install_programs():
+  update_programs()
+
+  args = create_commands_and_arguments()
 
   if args.all:
     install_all_programs(args.node)
@@ -41,7 +76,7 @@ def install_programs():
     install_php()
   elif args.node:
     install_node(args.node)
-  elif args.db_path:
+  elif args.path:
     restore_database(args.db_path)
   else:
     print('Invalid argument(s) passed to this command')
@@ -93,7 +128,7 @@ def install_mysql():
 
 def install_node(version):
   # Install NodeJS
-  print_blue('About to install NodeJS and Yarn')
+  print_blue('About to install NodeJS and Yarn...')
   os.system(f"curl -sL https://deb.nodesource.com/setup_{version}.x | sudo -E bash -")
   os.system("apt install nodejs")
   os.system("npm i -g npm")
