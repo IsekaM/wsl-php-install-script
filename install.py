@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import getpass, argparse, os
+import getpass, argparse, os, time
 
 def run():
   if getpass.getuser() != 'root':
@@ -8,7 +8,18 @@ def run():
   else:
     install_programs()
 
+def print_blue(text):
+  red = '\n\033[94m'
+  print(f"{red}{text}")
+  time.sleep(2)
+
+def update_programs():
+  print_blue('Updating installed applications...')
+  os.system('apt update && apt upgrade -y')
+
 def install_programs():
+  update_programs()
+
   parser = argparse.ArgumentParser(
     description='Installs PHP, Composer, MySQL and NodeJS on WSL (Ubuntu)'
   )
@@ -58,21 +69,34 @@ def install_php():
     'software-properties-common'
   ]
 
+  # Install PHP 8.1 and 7.4
+  print_blue("About to install PHP...")
   os.system(f"apt install {' '.join(required_dependencies)} -y")
   os.system(f"add-apt-repository ppa:ondrej/php -y")
   os.system(f"apt install -y php{8.1,7.4}-{','.join(php_extensions)} -y")
 
-def install_mysql():
-  os.system("apt install mariadb-server -y")
-  os.system('echo -e "\ny\nn\ny\ny\ny\ny" | /usr/bin/mysql_secure_installation')
+  # Install Composer
+  print_blue('About to install Composer...')
   os.system('php -r "copy(\'https://getcomposer.org/installer\', \'composer-setup.php\');"')
   os.system('php composer-setup.php')
   os.system('php -r "unlink(\'composer-setup.php\');"')
+  os.system('mv composer.phar /usr/local/bin/composer')
+
+def install_mysql():
+  # Install MariaDB Server
+  print_blue('About to install MariaDB...')
+  os.system("apt install mariadb-server -y")
+  os.system('echo -e "\ny\nn\ny\ny\ny\ny" | /usr/bin/mysql_secure_installation')
 
 def install_node(version):
+  # Install NodeJS
+  print_blue('About to install NodeJS and Yarn')
   os.system(f"curl -sL https://deb.nodesource.com/setup_{version}.x | sudo -E bash -")
   os.system("apt install nodejs")
   os.system("npm i -g npm")
   os.system("npm i -g yarn")
 
-run()
+try:
+  run()
+except KeyboardInterrupt:
+  print('You have stopped the installation.')
