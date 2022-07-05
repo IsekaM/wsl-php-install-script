@@ -8,6 +8,9 @@ def run():
   else:
     install_programs()
 
+def get_home_path():
+  return os.path.expanduser(f'~{os.getenv("SUDO_USER")}')
+
 def print_blue(text):
   blue = '\033[94m'
   print(f"\n{blue}[/] {text}\x1b[0m")
@@ -120,6 +123,9 @@ def install_php():
   os.system('php -r "unlink(\'composer-setup.php\');"')
   os.system('mv composer.phar /usr/local/bin/composer')
 
+  # Add bash aliases
+  add_bash_aliases()
+
 def install_mysql():
   # Install MariaDB Server
   print_blue('About to install MariaDB...')
@@ -137,6 +143,18 @@ def install_node(version):
 def restore_database(path):
   print_blue(f'About to restore database from {path}')
   os.system(f'mysql < {path}')
+
+def add_bash_aliases():
+  print_blue("Attempting to add bash aliases...")
+
+  home_path = get_home_path();
+  bash_aliases_path = os.path.join(home_path, '.bash_aliases')
+
+  with open(bash_aliases_path, 'r+') as bash_aliases_file:
+    if 'pa="php artisan"' not in bash_aliases_file.read():
+      bash_aliases_file.write('#PHP Aliases\nalias pa="php artisan"')
+    else:
+      print('Bash aliases already added')
 
 try:
   run()
