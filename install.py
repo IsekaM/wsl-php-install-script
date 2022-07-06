@@ -104,7 +104,6 @@ def install_php():
     'xml',
     'pdo',
     'zip',
-    'json',
     'tokenizer'
   ]
 
@@ -115,11 +114,13 @@ def install_php():
     'software-properties-common'
   ]
 
+  packages = list(map(lambda ext: f"php8.1-{ext} php7.4-{ext}", php_extensions))
+
   # Install PHP 8.1 and 7.4
   print_color("About to install PHP...")
   os.system(f"apt install {' '.join(required_dependencies)} -y")
   os.system(f"add-apt-repository ppa:ondrej/php -y")
-  os.system(f"apt install -y php{8.1,7.4}-{','.join(php_extensions)} -y")
+  os.system(f"apt install {packages}")
 
   # Install Composer
   print_color('About to install Composer...')
@@ -135,6 +136,7 @@ def install_mysql():
   # Install MariaDB Server
   print_color('About to install MariaDB...')
   os.system("apt install mariadb-server -y")
+  os.system("/etc/init.d/mysql start")
   os.system('echo -e "\ny\nn\ny\ny\ny\ny" | /usr/bin/mysql_secure_installation')
 
 def install_node(version):
