@@ -34,22 +34,26 @@ def create_commands_and_arguments():
     'install',
     help='Installs programs'
   )
+
   install_subparser.add_argument(
     '--php', 
     help='Installs PHP', 
     action='store_true'
   )
+
   install_subparser.add_argument(
     '--mysql', 
     help='Installs MySql', 
     action='store_true'
   )
+
   install_subparser.add_argument(
     '--node', 
     help='Installs NodeJs', 
     default=14, 
     type=int
   )
+
   install_subparser.add_argument(
     '--all', 
     help='Installs all programs', 
@@ -60,6 +64,7 @@ def create_commands_and_arguments():
     'restore-db', 
     help='Restores MySQL database from file'
   )
+
   restore_db_subparser.add_argument(
     'path', 
     help='Path to database', 
@@ -104,7 +109,10 @@ def install_php():
     'xml',
     'pdo',
     'zip',
-    'tokenizer'
+    'tokenizer',
+    'soap',
+    'curl',
+    'gd',
   ]
 
   required_dependencies = [
@@ -120,7 +128,7 @@ def install_php():
   print_color("About to install PHP...")
   os.system(f"apt install {' '.join(required_dependencies)} -y")
   os.system(f"add-apt-repository ppa:ondrej/php -y")
-  os.system(f"apt install {packages}")
+  os.system(f"apt install {' '.join(packages)} -y")
 
   # Install Composer
   print_color('About to install Composer...')
@@ -157,7 +165,7 @@ def add_bash_aliases():
   home_path = get_home_path();
   bash_aliases_path = os.path.join(home_path, '.bash_aliases')
 
-  with open(bash_aliases_path, 'r+') as bash_aliases_file:
+  with open(bash_aliases_path, 'a+') as bash_aliases_file:
     if 'pa="php artisan"' not in bash_aliases_file.read():
       bash_aliases_file.write('#PHP Aliases\nalias pa="php artisan"')
     else:
