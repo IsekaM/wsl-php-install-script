@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import getpass, argparse, os, time
+import getpass, argparse, os, time, inspect
 
 def run():
   if getpass.getuser() != 'root':
@@ -11,13 +11,16 @@ def run():
 def get_home_path():
   return os.path.expanduser(f'~{os.getenv("SUDO_USER")}')
 
-def print_blue(text):
-  blue = '\033[94m'
-  print(f"\n{blue}[/] {text}\x1b[0m")
+def print_color(text, color = "blue"):
+  signal = '[/]' if color == 'blue' else 'x'
+  color = '\033[94m' if color == 'blue' else '\033[91m'
+
+  print(f"\n{color}{signal} {text}\x1b[0m")
+  
   time.sleep(1.25)
 
 def update_programs():
-  print_blue('Updating installed applications...')
+  print_color('Updating installed applications...')
   os.system('apt update && apt upgrade -y')
 
 def create_commands_and_arguments():
@@ -66,9 +69,11 @@ def create_commands_and_arguments():
   return parser.parse_args()
 
 def install_programs():
+  args = create_commands_and_arguments()
+
   update_programs()
 
-  args = create_commands_and_arguments()
+  add_custom_ps1()
 
   if args.all:
     install_all_programs(args.node)
@@ -111,13 +116,13 @@ def install_php():
   ]
 
   # Install PHP 8.1 and 7.4
-  print_blue("About to install PHP...")
+  print_color("About to install PHP...")
   os.system(f"apt install {' '.join(required_dependencies)} -y")
   os.system(f"add-apt-repository ppa:ondrej/php -y")
   os.system(f"apt install -y php{8.1,7.4}-{','.join(php_extensions)} -y")
 
   # Install Composer
-  print_blue('About to install Composer...')
+  print_color('About to install Composer...')
   os.system('php -r "copy(\'https://getcomposer.org/installer\', \'composer-setup.php\');"')
   os.system('php composer-setup.php')
   os.system('php -r "unlink(\'composer-setup.php\');"')
@@ -128,24 +133,24 @@ def install_php():
 
 def install_mysql():
   # Install MariaDB Server
-  print_blue('About to install MariaDB...')
+  print_color('About to install MariaDB...')
   os.system("apt install mariadb-server -y")
   os.system('echo -e "\ny\nn\ny\ny\ny\ny" | /usr/bin/mysql_secure_installation')
 
 def install_node(version):
   # Install NodeJS
-  print_blue('About to install NodeJS and Yarn...')
+  print_color('About to install NodeJS and Yarn...')
   os.system(f"curl -sL https://deb.nodesource.com/setup_{version}.x | sudo -E bash -")
   os.system("apt install nodejs")
   os.system("npm i -g npm")
   os.system("npm i -g yarn")
 
 def restore_database(path):
-  print_blue(f'About to restore database from {path}')
+  print_color(f'About to restore database from {path}')
   os.system(f'mysql < {path}')
 
 def add_bash_aliases():
-  print_blue("Attempting to add bash aliases...")
+  print_color("Attempting to add bash aliases...")
 
   home_path = get_home_path();
   bash_aliases_path = os.path.join(home_path, '.bash_aliases')
@@ -154,7 +159,29 @@ def add_bash_aliases():
     if 'pa="php artisan"' not in bash_aliases_file.read():
       bash_aliases_file.write('#PHP Aliases\nalias pa="php artisan"')
     else:
-      print('Bash aliases already added')
+      print_color('Bash aliases already added', 'red')
+
+def add_custom_ps1():
+  print_color("Attempting to add custom PS1...")
+
+  home_path = get_home_path()
+  bash_rc_path = os.path.join(home_path, '.bashrc')
+  file_content = r"""
+    # Custom PS1
+    parse_git_branch() {
+      git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+    }
+
+    export PS1="\u@\h \[\033[32m\]\w\[\033[33m\]\$(parse_git_branch)\[\033[00m\] \n$ "
+    export PATH="~/.npm-global/bin:~/.config/composer/vendor/bin:$PATH" 
+  """.strip()
+
+  with open(bash_rc_path, 'r+') as bash_rc_file:
+    if 'parse_git_branch()' not in bash_rc_file.read():
+      bash_rc_file.write(inspect.cleandoc(file_content))
+      os.system(f'/bin/sh {bash_rc_path}')
+    else:
+      print_color('Custom PS1 already exists', 'red')
 
 try:
   run()
